@@ -1,7 +1,7 @@
 import { isclose } from '../utils';
 import { db } from './db';
 
-export async function get_snpcoord(assembly, s) {
+export async function get_snpcoord(assembly: string, s) {
     const tableName = assembly + '_snps';
     const q = `
         SELECT chrom, start, stop
@@ -15,7 +15,7 @@ export async function get_snpcoord(assembly, s) {
     });
 }
 
-export async function has_overlap(assembly, coord) {
+export async function has_overlap(assembly: string, coord) {
     const tableName = assembly + '_cre_all';
     const q = `
         SELECT accession
@@ -29,11 +29,11 @@ export async function has_overlap(assembly, coord) {
 }
 
 export class GeneParse {
-    assembly; s; useTss;
+    assembly: string; s; useTss;
     tssDist; oname; strand;
     coord; approved_symbol; sm;
 
-    constructor(assembly, r, s, useTss, tssDist) {
+    constructor(assembly: string, r, s, useTss, tssDist) {
         this.assembly = assembly;
         this.s = s;
         this.useTss = useTss;
@@ -82,7 +82,7 @@ export class GeneParse {
     }
 }
 
-async function exactGeneMatch(assembly, s, usetss, tssDist) {
+async function exactGeneMatch(assembly: string, s, usetss, tssDist) {
     const slo = s.toLowerCase().trim();
     const searchTableName = assembly + '_gene_search';
     const infoTableName = assembly + '_gene_info';
@@ -106,7 +106,7 @@ async function exactGeneMatch(assembly, s, usetss, tssDist) {
     return rows.map(r => new GeneParse(assembly, r, s, usetss, tssDist));
 }
 
-async function fuzzyGeneMatch(assembly, s, usetss, tssDist) {
+async function fuzzyGeneMatch(assembly: string, s, usetss, tssDist) {
     const slo = s.toLowerCase().trim();
     const searchTableName = assembly + '_gene_search';
     const infoTableName = assembly + '_gene_info';
@@ -127,7 +127,7 @@ async function fuzzyGeneMatch(assembly, s, usetss, tssDist) {
     return rows.map(r => new GeneParse(assembly, r, s, usetss, tssDist));
 }
 
-export async function try_find_gene(assembly, s, usetss, tssDist) {
+export async function try_find_gene(assembly: string, s, usetss, tssDist) {
     let genes = await exactGeneMatch(assembly, s, usetss, tssDist);
     if (genes.length === 0) {
         genes = await fuzzyGeneMatch(assembly, s, usetss, tssDist);
@@ -135,7 +135,7 @@ export async function try_find_gene(assembly, s, usetss, tssDist) {
     return genes;
 }
 
-export async function find_celltype(assembly, q, rev = false) {
+export async function find_celltype(assembly: string, q, rev = false) {
     if (q.length === 0) {
         return {s: q, cellType: undefined, interpretation: undefined};
     }

@@ -1,7 +1,7 @@
 import * as CoordUtils  from '../coord_utils';
 import { db } from './db';
 
-export async function nearbyDEs(assembly, coord, halfWindow, ct1, ct2, pval) {
+export async function nearbyDEs(assembly: string, coord, halfWindow, ct1, ct2, pval) {
     const c = CoordUtils.expanded(coord, halfWindow);
     const tableName = assembly + '_de_cts';
     let q = `

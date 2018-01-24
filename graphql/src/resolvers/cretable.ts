@@ -1,8 +1,10 @@
 import { getCreTable, rfacets_active } from '../db/db_cre_table';
 import { GraphQLFieldResolver } from 'graphql';
 import { parse } from './search';
+import { cache } from '../db/db_cache';
+import { Version } from '../schema/schema';
 
-export function mapcre(assembly, r, geneIDsToApprovedSymbol) {
+export function mapcre(version: Version, r, geneIDsToApprovedSymbol) {
     const all = r['gene_all_id'].slice(0, 3).map(gid => geneIDsToApprovedSymbol[gid]);
     const pc = r['gene_pc_id'].slice(0, 3).map(gid => geneIDsToApprovedSymbol[gid]);
     const nearbygenes = {
@@ -10,7 +12,7 @@ export function mapcre(assembly, r, geneIDsToApprovedSymbol) {
         'pc': pc,
     };
     return {
-        assembly,
+        version,
         ...r,
         ctspecific: Object.keys(r.ctspecific).length > 0 ? r.ctspecific : undefined,
         gene_all_id: undefined,
@@ -19,13 +21,12 @@ export function mapcre(assembly, r, geneIDsToApprovedSymbol) {
     };
 }
 
-const cache = require('../db/db_cache').cache;
-async function cre_table(data, assembly, pagination) {
-    const c = cache(assembly);
-    const results = await getCreTable(assembly, c.ctmap, data, pagination);
+async function cre_table(data, version: Version, pagination) {
+    const c = cache(version);
+    const results = await getCreTable(version.assembly, c.ctmap, data, pagination);
     const lookup = c.geneIDsToApprovedSymbol;
 
-    results.cres = results.cres.map(r => mapcre(assembly, r, lookup));
+    results.cres = results.cres.map(r => mapcre(version, r, lookup));
     if ('cellType' in data && data['cellType']) {
         results['rfacets'] = rfacets_active(c.ctmap, data);
     } else {
@@ -35,8 +36,8 @@ async function cre_table(data, assembly, pagination) {
 }
 
 export async function resolve_data(source, inargs, context) {
-    const assembly = inargs.assembly;
+    const version: Version = inargs.version;
     const data = inargs.data ? inargs.data : {};
-    const results = cre_table(data, assembly, inargs.pagination || {});
+    const results = cre_table(data, version, inargs.pagination || {});
     return results;
 }

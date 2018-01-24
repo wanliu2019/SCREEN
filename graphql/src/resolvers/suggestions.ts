@@ -1,7 +1,7 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as Suggestions from '../db/db_suggestions';
 
-async function suggestions(query, assemblies) {
+async function suggestions(query: string, versiontag: string, assemblies: [string]) {
     assemblies = assemblies || ['hg19', 'mm10'];
     const p = query.split(' ');
     const results: Array<string> = [];
@@ -21,7 +21,8 @@ async function suggestions(query, assemblies) {
 }
 
 export const resolve_suggestions: GraphQLFieldResolver<any, any> = (source, args, context) => {
+    const versiontag: string = args.versiontag;
     const query = args.query;
     const assemblies = args.assemblies;
-    return suggestions(query, assemblies);
+    return suggestions(query, versiontag, assemblies);
 };

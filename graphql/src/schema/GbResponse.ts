@@ -4,7 +4,7 @@ import {
     GraphQLString,
     GraphQLNonNull
 } from 'graphql';
-import { resolve_gb_genetable, resolve_gb_trackhubs } from '../resolvers/gb';
+import { resolve_gb_genetable } from '../resolvers/gb';
 import { InputChromRange } from './CommonSchema';
 const GraphQLJSON = require('graphql-type-json');
 
@@ -19,10 +19,6 @@ export const GbResponse = new GraphQLObjectType({
             },
             resolve: resolve_gb_genetable
         },
-        trackhubs: {
-            type: new GraphQLList(GraphQLJSON),
-            resolve: resolve_gb_trackhubs
-        }
     }),
 });
 

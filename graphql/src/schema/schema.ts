@@ -40,10 +40,6 @@ import { resolve_ucsc_trackhub_url } from '../resolvers/ucsc_trackhub';
 import { resolve_credetails } from '../resolvers/credetails';
 import { resolve_rampage } from '../resolvers/rampage';
 
-const json = require('../../data.json');
-const search_json = require('../../search.json');
-
-
 const BaseType = new GraphQLObjectType({
     name: 'BaseType',
     description: 'An API to access various data related to ccREs',
@@ -52,7 +48,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get cRE data',
             type: DataResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
                 uuid: { type: new GraphQLNonNull(UUID) },
                 data: { type: CommonTypes.DataParameters },
                 pagination: { type: CommonTypes.PaginationParameters }
@@ -63,7 +59,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Perform a search',
             type: SearchResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
                 uuid: { type: new GraphQLNonNull(UUID) },
                 search: { type: CommonTypes.SearchParameters },
             },
@@ -72,13 +68,16 @@ const BaseType = new GraphQLObjectType({
         globals: {
             description: 'Get global data',
             type: GlobalsResponse,
+            args: {
+                versiontag: { type: new GraphQLNonNull(GraphQLString) },
+            },
             resolve: resolve_globals
         },
         de_search: {
             description: 'Search differential expression data',
             type: DeResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
                 gene: { type: new GraphQLNonNull(GraphQLString) },
                 ct1: { type: new GraphQLNonNull(GraphQLString) },
                 ct2: { type: new GraphQLNonNull(GraphQLString) },
@@ -89,7 +88,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get gene expression data',
             type: GeneExpResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
                 gene: { type: new GraphQLNonNull(GraphQLString) },
                 biosample_types: { type: new GraphQLNonNull(new GraphQLList(GraphQLString)) },
                 compartments: { type: new GraphQLNonNull(new GraphQLList(GraphQLString)) },
@@ -101,6 +100,7 @@ const BaseType = new GraphQLObjectType({
             type: SuggestionsResponse,
             args: {
                 query: { type: new GraphQLNonNull(GraphQLString) },
+                versiontag: { type: new GraphQLNonNull(GraphQLString) },
                 assemblies: { type: new GraphQLList(CommonTypes.Assembly) }
             },
             resolve: resolve_suggestions
@@ -109,7 +109,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get GWAS data',
             type: GwasResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) }
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
             },
             resolve: resolve_gwas
         },
@@ -125,7 +125,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get genome browser data',
             type: GbResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
             },
             resolve: resolve_gb
         },
@@ -142,6 +142,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get details for specific ccREs',
             type: new GraphQLList(CreDetailsResponse),
             args: {
+                versiontag: { type: new GraphQLNonNull(GraphQLString) },
                 accessions: { type: new GraphQLNonNull(new GraphQLList(GraphQLString)) }
             },
             resolve: resolve_credetails
@@ -150,7 +151,7 @@ const BaseType = new GraphQLObjectType({
             description: 'Get RAMPAGE data for a gene',
             type: RampageResponse,
             args: {
-                assembly: { type: new GraphQLNonNull(CommonTypes.Assembly) },
+                version: { type: new GraphQLNonNull(CommonTypes.InputSCREENVersion) },
                 gene: { type: new GraphQLNonNull(GraphQLString) }
             },
             resolve: resolve_rampage
@@ -172,6 +173,11 @@ const BaseMutation = new GraphQLObjectType({
         }
     })
 });
+
+export type Version = {
+    assembly: string;
+    versiontag: string;
+};
 
 const schema = new GraphQLSchema({
     types: [

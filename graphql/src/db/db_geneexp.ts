@@ -1,5 +1,6 @@
 import { db } from './db';
 import TissueColors from '../tissuecolors';
+import { Version } from '../schema/schema';
 
 const fixedmap = {
     'limb': 'limb',
@@ -18,10 +19,10 @@ const tissueSort = (a, b) => a['tissue'].localeCompare(b['tissue']);
 const tpmSort = (skey) => (a, b) => b[skey] - a[skey];
 
 export class GeneExpression {
-    assembly; itemsByRID;
+    version: Version; itemsByRID;
 
-    constructor(assembly) {
-        this.assembly = assembly;
+    constructor(version: Version) {
+        this.version = version;
         this.itemsByRID = {};
     }
 
@@ -41,7 +42,7 @@ export class GeneExpression {
             }
             const t = row['tissue'];
             if (!(t in ret)) {
-                const c = TissueColors.getTissueColor(t);
+                const c = TissueColors.getTissueColor(t, this.version.versiontag);
                 ret[t] = {
                     'name': t,
                     'displayName': t,
@@ -64,7 +65,7 @@ export class GeneExpression {
             }
             const t = row['tissue'];
             if (!(t in ret)) {
-                const c = TissueColors.getTissueColor(t);
+                const c = TissueColors.getTissueColor(t, this.version.versiontag);
                 ret[t] = {
                     'name': t,
                     'displayName': t,
@@ -102,7 +103,7 @@ export class GeneExpression {
                 this.itemsByRID[row['rID']] = row;
             }
             const t = row['tissue'];
-            const c = TissueColors.getTissueColor(t);
+            const c = TissueColors.getTissueColor(t, this.version.versiontag);
             const k = idx.toLocaleString('en', {minimumIntegerDigits: 3}) + '_' + t;
             ret[k] = {
                 'name': k,
@@ -126,8 +127,6 @@ export class GeneExpression {
     }
 
     async doComputeHorBars(rows, gene) {
-        const assembly = this.assembly;
-
         if (rows.length === 0) {
             return {};
         }
@@ -163,7 +162,7 @@ export class GeneExpression {
     }
 
     async computeHorBars(gene, compartments, biosample_types) {
-        const assembly = this.assembly;
+        const assembly = this.version.assembly;
         const tableName = 'r_expression_' + assembly;
         const q = `
             SELECT r.tpm, r_rnas_${assembly}.organ, r_rnas_${assembly}.cellType,
@@ -179,7 +178,7 @@ export class GeneExpression {
     }
 
     async computeHorBarsMean(gene, compartments, biosample_types) {
-        const assembly = this.assembly;
+        const assembly = this.version.assembly;
         const tableName = 'r_expression_' + assembly;
         const q = `
             SELECT avg(r.tpm) as tpm, r_rnas_${assembly}.organ, r_rnas_${assembly}.cellType,

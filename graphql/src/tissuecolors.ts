@@ -1,4 +1,4 @@
-const global_data_global = require('./db/db_cache').global_data_global;
+import { global_data_global } from './db/db_cache';
 
 export default class TissueColors {
     static tissueColors;
@@ -7,13 +7,13 @@ export default class TissueColors {
     static randColorGen = () => TissueColors.pad(TissueColors.rand().toString(16));
     static randColor = () => `#${TissueColors.randColorGen()}${TissueColors.randColorGen()}${TissueColors.randColorGen()}`;
 
-    static getTissueColor(t) {
-        const tissueToColor = global_data_global().colors['tissues'];
-        if (!(t in tissueToColor)) {
-            console.log('missing tissue color for', t);
+    static getTissueColor(tissue: string, versiontag: string) {
+        const tissueToColor = global_data_global(versiontag).colors['tissues'];
+        if (!(tissue in tissueToColor)) {
+            console.log('missing tissue color for', tissue);
             return TissueColors.randColor();
         }
-        const c = tissueToColor[t];
+        const c = tissueToColor[tissue];
         if (!c.startsWith('#')) {
             return '#' + c;
         }

@@ -1,7 +1,7 @@
 import * as Common from './db_common';
 import { db } from './db';
 
-export async function gwasStudies(assembly) {
+export async function gwasStudies(assembly: string) {
     const tableName = assembly + '_gwas_studies';
     const q = `
         SELECT authorpubmedtrait as value, author, pubmed, trait, numLDblocks as total_ldblocks
@@ -13,7 +13,7 @@ export async function gwasStudies(assembly) {
     return res.map(r => keys.reduce((obj, key) => ({ ...obj, [key]: r[key] }), {}));
 }
 
-export async function numLdBlocksOverlap(assembly, gwas_study) {
+export async function numLdBlocksOverlap(assembly: string, gwas_study) {
     const q = `
         SELECT COUNT(DISTINCT(ldblock))
         FROM ${assembly}_gwas as gwas,
@@ -27,7 +27,7 @@ export async function numLdBlocksOverlap(assembly, gwas_study) {
     return await db.oneOrNone(q, [gwas_study], r => r ? +r.count : 0);
 }
 
-export async function numCresOverlap(assembly, gwas_study) {
+export async function numCresOverlap(assembly: string, gwas_study) {
     const tableName = assembly + '_gwas_overlap';
     const q = `
         SELECT count(0)
@@ -37,7 +37,7 @@ export async function numCresOverlap(assembly, gwas_study) {
     return await db.oneOrNone(q, [gwas_study], r => r ? +r.count : 0);
 }
 
-export async function gwasEnrichment(assembly, gwas_study) {
+export async function gwasEnrichment(assembly: string, gwas_study) {
     const tableNamefdr = assembly + '_gwas_enrichment_fdr';
     const tableNamepval = assembly + '_gwas_enrichment_pval';
     const q = `
@@ -72,7 +72,7 @@ function getInfo() {
     return infofield;
 }
 
-export async function gwasPercentActive(assembly, gwas_study, ct, ctmap, ctsTable) {
+export async function gwasPercentActive(assembly: string, gwas_study, ct, ctmap, ctsTable) {
     const fields = [
         'cre.accession',
         'array_agg(snp) as snps',

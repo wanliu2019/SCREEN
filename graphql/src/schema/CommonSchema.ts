@@ -26,6 +26,37 @@ export const Assembly = new GraphQLEnumType({
     }
 });
 
+export const SCREENVersion = new GraphQLObjectType({
+    name: 'SCREENVersion',
+    description: 'Represents a specific version of screen and assembly.',
+    fields: () => ({
+        assembly: {
+            description: 'Assembly of this version',
+            type: new GraphQLNonNull(Assembly)
+        },
+        versiontag: {
+            description: 'Version tag',
+            type: new GraphQLNonNull(GraphQLString) // TODO: make special type
+        }
+    })
+});
+
+export const InputSCREENVersion = new GraphQLInputObjectType({
+    name: 'InputSCREENVersion',
+    description: 'Represents a specific version of screen and assembly to input.',
+    fields: () => ({
+        assembly: {
+            description: 'Assembly of this version',
+            type: new GraphQLNonNull(Assembly)
+        },
+        versiontag: {
+            description: 'Version tag',
+            type: new GraphQLNonNull(GraphQLString) // TODO: make special type
+        }
+    })
+});
+
+
 export const ElementType = new GraphQLEnumType({
     name: 'ElementType',
     values: {
@@ -202,16 +233,8 @@ export const PaginationParameters = new GraphQLInputObjectType({
     })
 });
 
-export const cREInfo = new GraphQLObjectType({
-    name: 'info',
-    description: 'Includes common ccRE info.',
-    fields: {
-
-    },
-});
-
-export const genes = new GraphQLObjectType({
-    name: 'genes',
+export const nearbygenes = new GraphQLObjectType({
+    name: 'nearbygenes',
     description: 'Nearby genes',
     fields: {
         pc: {
@@ -252,21 +275,13 @@ export const ctSpecific = new GraphQLObjectType({
     }
 });
 
-export const cREData = new GraphQLObjectType({
-    name: 'ccREData',
-    description: 'Data related to this ccRE',
-    fields: () => ({
-
-    })
-});
-
 export const cRE = new GraphQLObjectType({
     name: 'cRE',
     description: 'All data related to ccRE.',
     fields: () => ({
-        assembly: {
-            description: 'Assembly the ccRE is defined of',
-            type: new GraphQLNonNull(Assembly)
+        version: {
+            description: 'Version the ccRE is defined on',
+            type: new GraphQLNonNull(SCREENVersion)
         },
         accession: {
             description: 'Accession of this ccRE',
@@ -308,10 +323,9 @@ export const cRE = new GraphQLObjectType({
             description: 'celltype-specific zscores, if celltype was specified',
             type: ctSpecific
         },
-
         nearbygenes: {
             description: 'Nearby genes',
-            type: new GraphQLNonNull(genes)
+            type: new GraphQLNonNull(nearbygenes)
         },
     })
 });

@@ -1,17 +1,17 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as DbGwas from '../db/db_gwas';
-
-const cache = require('../db/db_cache').cache;
+import { cache } from '../db/db_cache';
+import { Version } from '../schema/schema';
 
 class Gwas {
-    assembly; studies; byStudy;
-    constructor(assembly) {
-        this.assembly = assembly;
+    version: Version; studies; byStudy;
+    constructor(version) {
+        this.version = version;
     }
 
     async awaitStudies() {
         if (!this.studies) {
-            this.studies = await DbGwas.gwasStudies(this.assembly);
+            this.studies = await DbGwas.gwasStudies(this.version.assembly);
             this.byStudy = this.studies.reduce((obj, r) => ({ ...obj, [r['value']]: r }), {});
         }
     }
@@ -19,9 +19,9 @@ class Gwas {
     checkStudy = (study) => study in this.byStudy;
     totalLDblocks = (gwas_study) => this.byStudy[gwas_study]['total_ldblocks'];
 
-    numLdBlocksOverlap = (gwas_study) => DbGwas.numLdBlocksOverlap(this.assembly, gwas_study);
-    numCresOverlap = (gwas_study) => DbGwas.numCresOverlap(this.assembly, gwas_study);
-    allCellTypes = (gwas_study) => DbGwas.gwasEnrichment(this.assembly, gwas_study);
+    numLdBlocksOverlap = (gwas_study) => DbGwas.numLdBlocksOverlap(this.version.assembly, gwas_study);
+    numCresOverlap = (gwas_study) => DbGwas.numCresOverlap(this.version.assembly, gwas_study);
+    allCellTypes = (gwas_study) => DbGwas.gwasEnrichment(this.version.assembly, gwas_study);
 
     async mainTableInfo(gwas_study) {
         const total = await this.totalLDblocks(gwas_study);
@@ -42,10 +42,10 @@ class Gwas {
     }
 
     async cres(gwas_study, ct) {
-        const c = cache(this.assembly);
+        const c = cache(this.version);
         const ctmap = c.ctmap;
         const ctsTable = c.ctsTable;
-        const { cres, fieldsOut } = await DbGwas.gwasPercentActive(this.assembly, gwas_study, ct, ctmap, ctsTable);
+        const { cres, fieldsOut } = await DbGwas.gwasPercentActive(this.version.assembly, gwas_study, ct, ctmap, ctsTable);
 
         // accession, snp, geneid, zscores
         let totalActive = 0;
@@ -122,8 +122,8 @@ export const resolve_gwas_cres: GraphQLFieldResolver<any, any> = (source, args, 
 };
 
 export const resolve_gwas: GraphQLFieldResolver<any, any> = (source, args, context, info) => {
-    const assembly = args.assembly;
-    const g = new Gwas(assembly);
+    const version: Version = args.version;
+    const g = new Gwas(version);
     return g.awaitStudies().then(r => ({ gwas_obj: g }));
 };
 

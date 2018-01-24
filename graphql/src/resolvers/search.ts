@@ -2,13 +2,14 @@ import { checkChrom, isaccession, checkCreAssembly } from '../utils';
 import { GraphQLFieldResolver } from 'graphql';
 import * as Parse from '../db/db_parse';
 import { GeneParse } from '../db/db_parse';
+import { Version } from '../schema/schema';
 
 const re_range = /^[0-9,\.]+[\s\-]+[0-9,\.]+/;
 const re_base = /^[0-9,\.]+/;
 const re_chrom = /^[cC][hH][rR][0-9XxYy][0-9]?/;
 
 const chrom_lengths = require('../constants').chrom_lengths;
-function find_coord(assembly, s: string) {
+function find_coord(assembly: string, s: string) {
     const _p = s.split(' ');
     for (const x of _p) {
         const chrom = re_chrom.exec(x);
@@ -48,11 +49,11 @@ function sanitize(q: string) {
     return q.substr(0, 2048);
 }
 
-export async function parse(assembly, args) {
+export async function parse(version: Version, args) {
     const q = args.q || '';
     const s1 = sanitize(q).trim();
 
-    let {s, coord} = find_coord(assembly, s1);
+    let {s, coord} = find_coord(version.assembly, s1);
     const toks = s.split(' ').map(t => t.toLowerCase());
     const useTss = args['tss'] || 'tssDist' in args;
     let tssDist = 0;
@@ -84,15 +85,15 @@ export async function parse(assembly, args) {
     try {
         for (const t of toks) {
             if (isaccession(t)) {
-                if (!checkCreAssembly(assembly, t)) {
-                    console.log('assembly mismatch', assembly, t);
+                if (!checkCreAssembly(version.assembly, t)) {
+                    console.log('assembly mismatch', version.assembly, t);
                     throw new Error('mismatch assembly for accession ' + t);
                 }
                 accessions.push(t);
                 s = s.replace(t, '');
                 continue;
             } else if (t.startsWith('rs')) {
-                coord = await Parse.get_snpcoord(assembly, t);
+                coord = await Parse.get_snpcoord(version.assembly, t);
                 s = s.replace(t, '');
                 // TODO: add this back in
                 // if (coord && !(await Parse.has_overlap(assembly, coord))) {
@@ -112,7 +113,7 @@ export async function parse(assembly, args) {
 
     let genes: Array<GeneParse> = [];
     if (!coord && accessions.length === 0) {
-        genes = await Parse.try_find_gene(assembly, s, useTss, tssDist);
+        genes = await Parse.try_find_gene(version.assembly, s, useTss, tssDist);
         if (genes.length > 0) {
             const g = genes[0];
             interpretation['gene'] = g.get_genetext();
@@ -121,13 +122,13 @@ export async function parse(assembly, args) {
         }
     }
 
-    let findCellType = await Parse.find_celltype(assembly, s);
+    let findCellType = await Parse.find_celltype(version.assembly, s);
     s = findCellType.s;
     let cellType = findCellType.cellType;
     let _interpretation = findCellType.interpretation;
 
     if (!cellType) {
-        findCellType = await Parse.find_celltype(assembly, s, true);
+        findCellType = await Parse.find_celltype(version.assembly, s, true);
         s = findCellType.s;
         cellType = findCellType.cellType;
         _interpretation = findCellType.interpretation;
@@ -168,7 +169,7 @@ export async function parse(assembly, args) {
 }
 
 export const resolve_search: GraphQLFieldResolver<any, any> = (source, args, context) => {
-    const assembly = args.assembly;
-    const results = parse(assembly, args.search);
+    const version: Version = args.version;
+    const results = parse(version, args.search);
     return results;
 };

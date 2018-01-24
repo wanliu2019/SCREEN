@@ -1,6 +1,6 @@
 import { db } from './db';
 
-export async function genetable(assembly, chrom, start, end) {
+export async function genetable(assembly: string, chrom, start, end) {
     const tableName = assembly + '_gene_details';
     const q = `
         SELECT *

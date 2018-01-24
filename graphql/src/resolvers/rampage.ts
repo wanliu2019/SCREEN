@@ -1,12 +1,13 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as DbCommon from '../db/db_common';
+import { Version } from '../schema/schema';
 import HelperGrouper from '../helpergrouper';
 import { natsort, getAssemblyFromCre } from '../utils';
 
 
-export async function getByGene(assembly, gene) {
+export async function getByGene(version: Version, gene) {
     const ensemblid_ver = gene['ensemblid_ver'];
-    const transcripts = await DbCommon.rampageByGene(assembly, ensemblid_ver);
+    const transcripts = await DbCommon.rampageByGene(version.assembly, ensemblid_ver);
     if (!transcripts) {
         return {
             'sortedTranscripts': [],
@@ -34,12 +35,12 @@ export async function getByGene(assembly, gene) {
             items.push(info);
         }
 
-        const hg = new HelperGrouper(transcript, items);
+        const hg = new HelperGrouper(transcript, items, version.versiontag);
         ret['itemsByID'] = hg.byID;
         ret['itemsGrouped'] = hg.getGroupedItems('counts');
         return ret;
     };
-    const ri = await DbCommon.rampage_info(assembly);
+    const ri = await DbCommon.rampage_info(version.assembly);
     const byTranscript: any = {};
     for (const transcript of transcripts) {
         const info = _process(transcript, ri);
@@ -52,18 +53,18 @@ export async function getByGene(assembly, gene) {
     };
 }
 
-async function rampage(assembly, gene) {
-    const egene = await DbCommon.rampageEnsemblID(assembly, gene);
+async function rampage(version: Version, gene: string) {
+    const egene = await DbCommon.rampageEnsemblID(version.assembly, gene);
     const r = {
         ensemblid_ver: egene,
         name: gene
     };
-    return getByGene(assembly, r);
+    return getByGene(version, r);
 }
 
 const global_data_global = require('../db/db_cache').global_data_global;
 export const resolve_rampage: GraphQLFieldResolver<any, any> = (source, args, context) => {
-    const assembly = args.assembly;
+    const version: Version = args.version;
     const gene = args.gene;
-    return rampage(assembly, gene);
+    return rampage(version, gene);
 };

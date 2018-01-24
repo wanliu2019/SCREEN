@@ -1,19 +1,19 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as Common from '../db/db_common';
 import * as DbDe from '../db/db_de';
-
-const cache = require('../db/db_cache').cache;
-const lookupEnsembleGene = require('../db/db_cache').lookupEnsembleGene;
+import { cache } from '../db/db_cache';
+import { lookupEnsembleGene } from '../db/db_cache';
+import { Version } from '../schema/schema';
 
 
 class DE {
-    assembly; gene;
+    version: Version; gene;
     ct1; ct2;
     pos; names;
     halfWindow; thres; radiusScale;
 
-    constructor(assembly, gene, ct1, ct2) {
-        this.assembly = assembly;
+    constructor(version: Version, gene: string, ct1: string, ct2: string) {
+        this.version = version;
         this.gene = gene;
         this.ct1 = ct1;
         this.ct2 = ct2;
@@ -25,7 +25,7 @@ class DE {
 
     async coord() {
         if (!this.pos) {
-            const { pos, names } = await Common.genePos(this.assembly, this.gene);
+            const { pos, names } = await Common.genePos(this.version.assembly, this.gene);
             if (!pos) {
                 throw new Error('Invalid pos for ' + this.gene);
             }
@@ -42,7 +42,7 @@ class DE {
 
         const cd = await this.coord();
 
-        const nearbyDEs = await DbDe.nearbyDEs(this.assembly, cd, this.halfWindow, ct1, ct2, 0.05);
+        const nearbyDEs = await DbDe.nearbyDEs(this.version.assembly, cd, this.halfWindow, ct1, ct2, 0.05);
 
         if (nearbyDEs.length === 0) {
             return { 'data': undefined, 'xdomain': undefined };
@@ -82,12 +82,12 @@ class DE {
 
     async genesInRegion(start, stop) {
         const pos = await this.coord();
-        return Common.genesInRegion(this.assembly, pos.chrom, start, stop);
+        return Common.genesInRegion(this.version.assembly, pos.chrom, start, stop);
     }
 
     DEsForDisplay(nearbyDEs) {
         const ret = nearbyDEs.map(d => {
-            const { symbol: genename, strand } = lookupEnsembleGene(this.assembly, d['ensembl']);
+            const { symbol: genename, strand } = lookupEnsembleGene(this.version, d['ensembl']);
             return {
                 'fc': +(Math.round(+(d['log2foldchange'] + 'e+3'))  + 'e-3'),
                 'gene': genename,
@@ -116,7 +116,7 @@ class DE {
     }
 
     async nearbyPromoters() {
-        const c = cache(this.assembly);
+        const c = cache(this.version);
         const rmLookup = c.rankMethodToIDxToCellType['H3K4me3'];
         if (!(this.ct1 in rmLookup && this.ct2 in rmLookup)) {
             return [];
@@ -129,7 +129,7 @@ class DE {
             `h3k4me3_zscores[${ct1PromoterIdx}] as zscore_1`,
             `h3k4me3_zscores[${ct2PromoterIdx}] as zscore_2`
         ];
-        const cres = await Common.nearbyCREs(this.assembly, await this.coord(), 2 * this.halfWindow, cols, true);
+        const cres = await Common.nearbyCREs(this.version.assembly, await this.coord(), 2 * this.halfWindow, cols, true);
         return cres
             .filter(c =>
                 c['zscore_1'] > this.thres ||
@@ -138,7 +138,7 @@ class DE {
     }
 
     async nearbyEnhancers() {
-        const c = cache(this.assembly);
+        const c = cache(this.version);
         const rmLookup = c.rankMethodToIDxToCellType['H3K27ac'];
         if (!(this.ct1 in rmLookup && this.ct2 in rmLookup)) {
             return [];
@@ -151,7 +151,7 @@ class DE {
             `h3k27ac_zscores[${ct1EnhancerIdx}] as zscore_1`,
             `h3k27ac_zscores[${ct2EnhancerIdx}] as zscore_2`
         ];
-        const cres = await Common.nearbyCREs(this.assembly, await this.coord(), 2 * this.halfWindow, cols, false);
+        const cres = await Common.nearbyCREs(this.version.assembly, await this.coord(), 2 * this.halfWindow, cols, false);
         return cres
         .filter(c =>
             c['zscore_1'] > this.thres ||
@@ -168,8 +168,8 @@ class DE {
     }
 }
 
-async function de(assembly, gene, ct1, ct2) {
-    const de = new DE(assembly, gene, ct1, ct2);
+async function de(version: Version, gene: string, ct1: string, ct2: string) {
+    const de = new DE(version, gene, ct1, ct2);
     const nearbyDEs = await de.nearbyDEs();
 
     let diffCREs: any = {};
@@ -186,9 +186,9 @@ async function de(assembly, gene, ct1, ct2) {
 }
 
 export const resolve_de: GraphQLFieldResolver<any, any> = (source, args, context) => {
-    const assembly = args.assembly;
+    const version: Version = args.version;
     const gene = args.gene;
     const ct1 = args.ct1;
     const ct2 = args.ct2;
-    return de(assembly, gene, ct1, ct2);
+    return de(version, gene, ct1, ct2);
 };

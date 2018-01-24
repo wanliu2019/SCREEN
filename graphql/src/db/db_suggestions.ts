@@ -1,6 +1,6 @@
 import { db } from './db';
 
-export async function get_suggestions(assembly, suggest) {
+export async function get_suggestions(assembly: string, suggest) {
     const tableName = assembly + '_autocomplete';
     const q = `
         SELECT oname

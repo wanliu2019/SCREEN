@@ -1,6 +1,7 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as Common from '../db/db_common';
 import { GeneExpression } from '../db/db_geneexp';
+import { Version } from '../schema/schema';
 
 const { UserError } = require('graphql-errors');
 
@@ -10,7 +11,7 @@ const allBiosampleTypes = [
     'in vitro differentiated cells', 'primary cell',
     'stem cell', 'tissue'];
 
-async function geneexp(assembly, gene, biosample_types, compartments) {
+async function geneexp(version: Version, gene: string, biosample_types: [string], compartments: [string]) {
     // TODO: check for valid gene
     if (biosample_types.length === 0) {
         throw new UserError('no biosample type selected');
@@ -24,7 +25,7 @@ async function geneexp(assembly, gene, biosample_types, compartments) {
         throw new UserError('no compartments');
     }
 
-    const rows = await Common.geneInfo(assembly, gene);
+    const rows = await Common.geneInfo(version.assembly, gene);
     if (rows.length === 0) {
         return { 'gene': gene };
     }
@@ -33,7 +34,7 @@ async function geneexp(assembly, gene, biosample_types, compartments) {
     const name = gi.approved_symbol;
     const strand = gi.strand;
 
-    const cge = new GeneExpression(assembly);
+    const cge = new GeneExpression(version);
     const single = cge.computeHorBars(name, compartments, biosample_types);
     const mean = cge.computeHorBarsMean(name, compartments, biosample_types);
     const itemsByRID = cge.itemsByRID;
@@ -54,9 +55,9 @@ async function geneexp(assembly, gene, biosample_types, compartments) {
 }
 
 export const resolve_geneexp: GraphQLFieldResolver<any, any> = (source, args, context) => {
-    const assembly = args.assembly;
+    const version: Version = args.version;
     const gene = args.gene;
     const biosample_types = args.biosample_types;
     const compartments = args.compartments;
-    return geneexp(assembly, gene, biosample_types, compartments);
+    return geneexp(version, gene, biosample_types, compartments);
 };

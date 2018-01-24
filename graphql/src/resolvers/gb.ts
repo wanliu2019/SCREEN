@@ -1,28 +1,15 @@
 import { GraphQLFieldResolver } from 'graphql';
 import * as DbGb from '../db/db_gb';
-
-const cache = require('../db/db_cache').cache;
-
-async function genetable(assembly, range) {
-    return DbGb.genetable(assembly, range.chrom, range.start, range.end);
-}
-
-async function trackhubs(assembly) {
-    return [];
-}
+import { cache } from '../db/db_cache';
+import { Version } from '../schema/schema';
 
 export const resolve_gb_genetable: GraphQLFieldResolver<any, any> = (source, args, context, info) => {
-    const assembly = source.assembly;
+    const version: Version = source.version;
     const range = args.range;
-    return genetable(assembly, range);
-};
-
-export const resolve_gb_trackhubs: GraphQLFieldResolver<any, any> = (source, args, context, info) => {
-    const assembly = source.assembly;
-    return trackhubs(assembly);
+    return DbGb.genetable(version.assembly, range.chrom, range.start, range.end);
 };
 
 export const resolve_gb: GraphQLFieldResolver<any, any> = (source, args, context, info) => {
-    const assembly = args.assembly;
-    return { assembly };
+    const version: Version = args.version;
+    return { version };
 };

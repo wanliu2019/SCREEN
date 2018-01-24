@@ -37,7 +37,7 @@ function _intersections_tablename(eset, metadata = false) {
     return eset + 'Intersections' + (metadata ? 'Metadata' : '');
 }
 
-export async function tfHistoneDnaseList(assembly, eset) {
+export async function tfHistoneDnaseList(assembly: string, eset) {
     const tableName = assembly + '_' + _intersections_tablename(eset, true);
     const q = `
         SELECT distinct label
@@ -152,7 +152,7 @@ export async function makeCTStable(assembly) {
     return res.reduce((obj, r) => ({ ...obj, [r['celltypename']]: r['pgidx']}), {});
 }
 
-export async function genePos(assembly, gene) {
+export async function genePos(assembly: string, gene) {
     let ensemblid = gene;
     if (gene.startsWith('ENS') && gene.indexOf('.') !== -1) {
         ensemblid = gene.split('.')[0];
@@ -339,7 +339,7 @@ export async function creBigBeds(assembly) {
     return ret;
 }
 
-export async function genesInRegion(assembly, chrom, start, stop) {
+export async function genesInRegion(assembly: string, chrom, start, stop) {
     const tableName = assembly + '_gene_info';
     const q = `
         SELECT approved_symbol,start,stop,strand
@@ -358,7 +358,7 @@ export async function genesInRegion(assembly, chrom, start, stop) {
     }));
 }
 
-export async function nearbyCREs(assembly, coord, halfWindow, cols, isProximalOrDistal) {
+export async function nearbyCREs(assembly: string, coord, halfWindow, cols, isProximalOrDistal) {
     const c = CoordUtils.expanded(coord, halfWindow);
     const tableName = assembly + '_cre_all';
     let q = `
@@ -397,7 +397,7 @@ export async function genemap(assembly) {
     return { toSymbol, toStrand };
 }
 
-export async function geneInfo(assembly, gene) {
+export async function geneInfo(assembly: string, gene) {
     const tableName = assembly + '_gene_info';
     const q = `
         SELECT *
@@ -435,7 +435,7 @@ export async function loadNineStateGenomeBrowser(assembly) {
     return ret;
 }
 
-export async function crePos(assembly, accession) {
+export async function crePos(assembly: string, accession) {
     const tableName = assembly + '_cre_all';
     const q = `
         SELECT chrom, start, stop
@@ -450,7 +450,7 @@ export async function crePos(assembly, accession) {
     return { chrom: r['chrom'], start: r['start'], end: r['stop']};
 }
 
-async function getColsForAccession(assembly, accession, cols) {
+async function getColsForAccession(assembly: string, accession, cols) {
     const tableName = assembly + '_cre_all';
     const q = `
         SELECT ${cols.join(',')}
@@ -460,19 +460,19 @@ async function getColsForAccession(assembly, accession, cols) {
     return db.oneOrNone(q, [accession]);
 }
 
-export async function creRanksPromoter(assembly, accession) {
+export async function creRanksPromoter(assembly: string, accession) {
     const cols = ['promoter_zscores'];
     const r = await getColsForAccession(assembly, accession, cols);
     return {'zscores': {'Promoter': r['promoter_zscores']}};
 }
 
-export async function creRanksEnhancer(assembly, accession) {
+export async function creRanksEnhancer(assembly: string, accession) {
     const cols = ['enhancer_zscores'];
     const r = await getColsForAccession(assembly, accession, cols);
     return {'zscores': {'Enhancer': r['enhancer_zscores']}};
 }
 
-export async function creRanks(assembly, accession) {
+export async function creRanks(assembly: string, accession) {
     const cols = `
 dnase_zscores
 ctcf_zscores
@@ -486,7 +486,7 @@ promoter_zscores`.trim().split('\n');
     return cols.reduce((obj, k) => ({ ...obj, [k.split('_')[0]]: r[k]}), {});
 }
 
-async function getGenes(assembly, accession, allOrPc) {
+async function getGenes(assembly: string, accession, allOrPc) {
     const tableall = assembly + '_cre_all';
     const tableinfo = assembly + '_gene_info';
     const q = `
@@ -501,14 +501,14 @@ async function getGenes(assembly, accession, allOrPc) {
     return db.any(q, [accession]);
 }
 
-export async function creGenes(assembly, accession, chrom) {
+export async function creGenes(assembly: string, accession, chrom) {
     return {
         genesAll: await getGenes(assembly, accession, 'all'),
         genesPC: await getGenes(assembly, accession, 'pc')
     };
 }
 
-export async function cresInTad(assembly, accession, chrom, start) {
+export async function cresInTad(assembly: string, accession, chrom, start) {
     const tablecre = assembly + '_cre_all';
     const tableinfo = assembly + '_tads_info';
     const tabletads = assembly + '_tads';
@@ -529,7 +529,7 @@ export async function cresInTad(assembly, accession, chrom, start) {
     return res.filter(x => x['accession'] != accession);
 }
 
-export async function genesInTad(assembly, accession, chrom) {
+export async function genesInTad(assembly: string, accession, chrom) {
     const tableName = assembly + '_tads';
     const q = `
         SELECT geneIDs
@@ -539,7 +539,7 @@ export async function genesInTad(assembly, accession, chrom) {
     return db.any(q, [accession]);
 }
 
-export async function distToNearbyCREs(assembly, accession, coord, halfWindow) {
+export async function distToNearbyCREs(assembly: string, accession, coord, halfWindow) {
     const cols = ['start', 'stop', 'accession'];
     const cres = await nearbyCREs(assembly, coord, halfWindow, cols, undefined);
     return cres
@@ -550,7 +550,7 @@ export async function distToNearbyCREs(assembly, accession, coord, halfWindow) {
         }));
 }
 
-export async function intersectingSnps(assembly, accession, coord, halfWindow) {
+export async function intersectingSnps(assembly: string, accession, coord, halfWindow) {
     const c = CoordUtils.expanded(coord, halfWindow);
     const tableName = assembly + '_snps';
     const q = `
@@ -572,7 +572,7 @@ export async function intersectingSnps(assembly, accession, coord, halfWindow) {
     }));
 }
 
-export async function peakIntersectCount(assembly, accession, totals, eset) {
+export async function peakIntersectCount(assembly: string, accession, totals, eset) {
 const tableName = assembly + '_' + _intersections_tablename(eset);
     const q = `
         SELECT tf, histone
@@ -592,7 +592,7 @@ const tableName = assembly + '_' + _intersections_tablename(eset);
     return { 'tf': tfs, 'histone': histones };
 }
 
-export async function rampageByGene(assembly, ensemblid_ver) {
+export async function rampageByGene(assembly: string, ensemblid_ver) {
     const tableName = assembly + '_rampage';
     const q = `
         SELECT *
@@ -634,7 +634,7 @@ export async function rampage_info(assembly) {
     return ret;
 }
 
-export async function rampageEnsemblID(assembly, gene) {
+export async function rampageEnsemblID(assembly: string, gene) {
     const tableName = assembly + '_gene_info';
     const q = `
         SELECT ensemblid_ver FROM ${tableName}
@@ -643,7 +643,7 @@ export async function rampageEnsemblID(assembly, gene) {
     return await db.oneOrNone(q, [gene], r => r && r.ensemblid_ver);
 }
 
-export async function linkedGenes(assembly, accession) {
+export async function linkedGenes(assembly: string, accession) {
     const tableName = assembly + '_linked_genes';
     const q = `
         SELECT gene, celltype, method, dccaccession
@@ -653,7 +653,7 @@ export async function linkedGenes(assembly, accession) {
     return db.any(q, [accession]);
 }
 
-export async function histoneTargetExps(assembly, accession, target, eset) {
+export async function histoneTargetExps(assembly: string, accession, target, eset) {
     const peakTn = assembly + '_' + _intersections_tablename(eset);
     const peakMetadataTn = assembly + '_' + _intersections_tablename(eset, true);
     const q = `
@@ -673,7 +673,7 @@ export async function histoneTargetExps(assembly, accession, target, eset) {
     }));
 }
 
-export async function tfTargetExps(assembly, accession, target, eset) {
+export async function tfTargetExps(assembly: string, accession, target, eset) {
     const peakTn = assembly + '_' + _intersections_tablename(eset, false);
     const peakMetadataTn = assembly + '_' + _intersections_tablename(eset, true);
     const q = `
@@ -693,7 +693,7 @@ export async function tfTargetExps(assembly, accession, target, eset) {
     }));
 }
 
-export async function tfHistCounts(assembly, eset) {
+export async function tfHistCounts(assembly: string, eset) {
     const tableName = assembly + '_' + eset + 'intersectionsmetadata';
     const q = `
         SELECT COUNT(label), label

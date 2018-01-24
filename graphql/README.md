@@ -32,31 +32,48 @@ You can copy these into the graphiql window to check out example queries for dif
 
 Document (on left):
 ```
+query exons($version: InputSCREENVersion!, $range: InputChromRange!) {
+  gb(version: $version) {
+    genetable(range: $range)
+  }
+}
+
+fragment genedata on Gene {
+  approved_symbol
+  sm
+  range {
+      chrom
+      start
+      end
+      strand
+  }
+}
+
 query credetails {
-  credetails(accessions: ["EH37E0321285"]) {
+  credetails(versiontag: "v11", accessions: ["EH37E0321285"]) {
     info {
-      info {
+      version {
         assembly
-        accession
-        concordant
-        isproximal
-        k4me3max
-        k27acmax
-        ctcfmax
+        versiontag
       }
-      data {
-        range {
-          chrom
-          start
-          end
-        }
-        ctspecific {
-          ct
-          dnase_zscore
-          promoter_zscore
-          enhancer_zscore
-          ctcf_zscore
-        }
+      accession
+      concordant
+      isproximal
+      dnasemax
+      k4me3max
+      k27acmax
+      ctcfmax
+      range {
+        chrom
+        start
+        end
+      }
+      ctspecific {
+        ct
+        dnase_zscore
+        promoter_zscore
+        enhancer_zscore
+        ctcf_zscore
       }
     }
     miniPeaks
@@ -64,10 +81,10 @@ query credetails {
 }
 
 query snpSearch(
-  $assembly: Assembly!,
+  $version: InputSCREENVersion!,
   $uuid: UUID!
 ) {
-  search(assembly: $assembly, uuid: $uuid, search: {q:"rs146546272 rs111996173"}) {
+  search(version: $version, uuid: $uuid, search: {q:"rs146546272 rs111996173"}) {
     __typename
     ... on SNPsResponse {
       snps {
@@ -86,13 +103,13 @@ query snpSearch(
 
 
 query rangeSearchAndData(
-  $assembly: Assembly!,
+  $version: InputSCREENVersion!,
   $uuid: UUID!,
   $rangeSearch: SearchParameters!,
   $dataRange: DataParameters!,
   $dataCellType: DataParameters!
 ) {
-  search(assembly: $assembly, uuid: $uuid, search: $rangeSearch) {
+  search(version: $version, uuid: $uuid, search: $rangeSearch) {
     __typename
     ... on RangeResponse {
       range {
@@ -107,46 +124,36 @@ query rangeSearchAndData(
     }
   }
   # We can search by a range
-  dataSearch: data(assembly: $assembly, uuid: $uuid, data: $dataRange) {
-    total,
-    rfacets,
-    cres{
-      info{
-        accession
-      }
-    }
+  dataSearch: data(version: $version, uuid: $uuid, data: $dataRange) {
+  ...allcredata
   }
   # Or, we can refine our search. In this case, by cell type "K562"
-  dataSearchRefined: data(assembly: $assembly, uuid: $uuid, data: $dataCellType) {
+  dataSearchRefined: data(version: $version, uuid: $uuid, data: $dataCellType) {
     total
     cres {
-      info {
-        k4me3max
+      k4me3max
+      range {
+        chrom,
+        start,
+        end
       }
-      data {
-        range {
-          chrom,
-          start,
-          end
-        }
-        ctspecific {
-          ct
-          dnase_zscore
-          promoter_zscore
-          enhancer_zscore
-          ctcf_zscore
-        }
+      ctspecific {
+        ct
+        dnase_zscore
+        promoter_zscore
+        enhancer_zscore
+        ctcf_zscore
       }
     }
   },
 }
 
 query geneSearch(
-  $assembly: Assembly!,
+  $version: InputSCREENVersion!,
   $uuid: UUID!,
   $geneSearch: SearchParameters!,
 ) {
-  search(assembly: $assembly, uuid: $uuid, search: $geneSearch) {
+  search(version: $version, uuid: $uuid, search: $geneSearch) {
     __typename
     # We searched for a gene, so this should be empty
     ... on RangeResponse {
@@ -158,37 +165,29 @@ query geneSearch(
     }
     ... on SingleGeneResponse {
       gene {
-        approved_symbol,
-        sm
-        range {
-          chrom
-          start
-          end
-        }
+        ...genedata
       }
     }
   }
 }
 
 query dataWithPagination(
-  $assembly: Assembly!,
+  $version: InputSCREENVersion!,
   $uuid: UUID!,
   $dataRangeChr: DataParameters!,
   $pagination: PaginationParameters
 ) {
   # We can also paginate. We can return up to 1000 cREs for the first 10000
-	dataPagination: data(assembly: $assembly, uuid: $uuid, , data: $dataRangeChr, pagination: $pagination) {
+	dataPagination: data(version: $version, uuid: $uuid, , data: $dataRangeChr, pagination: $pagination) {
     total,
     cres {
-      info {
-        accession
-      }
+      accession
     }
   }
 }
 
 query desearch {
-  de_search(assembly: mm10, gene: "Kremen1", ct1: "C57BL/6_limb_embryo_11.5_days", ct2: "C57BL/6_limb_embryo_15.5_days") {
+  de_search(version: { versiontag: "v11", assembly: mm10 }, gene: "Kremen1", ct1: "C57BL/6_limb_embryo_11.5_days", ct2: "C57BL/6_limb_embryo_15.5_days") {
     coord {
       chrom
       start
@@ -201,13 +200,13 @@ query desearch {
 }
 
 query suggestions($suggestionSearch: String!, $assemblies: [Assembly]){
-  suggestions(query: $suggestionSearch, assemblies: $assemblies) {
+  suggestions(query: $suggestionSearch, versiontag: "v11", assemblies: $assemblies) {
     suggestions
   }
 }
 
 query geneexp_search {
-  geneexp_search(assembly: hg19, gene: "GAPDH", biosample_types: ["tissue"], compartments: ["cell"]) {
+  geneexp_search(version: { versiontag: "v11", assembly: hg19 }, gene: "GAPDH", biosample_types: ["tissue"], compartments: ["cell"]) {
     coords {
       chrom
       start
@@ -223,7 +222,7 @@ query geneexp_search {
 }
 
 query gwas {
-  gwas(assembly: hg19){
+  gwas(version: { versiontag: "v11", assembly: hg19 }){
 		gwas,
     study(study: "Lesch_18839057_ADHD"),
     cres(study: "Lesch_18839057_ADHD", cellType: "angular_gyrus_female_adult_75_years")
@@ -237,12 +236,12 @@ query getCart($uuid: UUID!) {
 }
 
 query carttable(
-    $assembly: Assembly!,
+    $version: InputSCREENVersion!,
     $uuid: UUID!,
     $dataquery: DataParameters!
 )
 {
-    data(assembly: $assembly, uuid: $uuid, data: $dataquery) {
+    data(version: $version, uuid: $uuid, data: $dataquery) {
   		...allcredata
     }
 }
@@ -251,44 +250,38 @@ fragment allcredata on Data {
   total,
 	rfacets,
   cres {
-    info {
+    version {
       assembly
-      accession
-      ctcfmax
-      k27acmax
-      k4me3max
-      concordant
-      isproximal
+      versiontag
     }
-    data {
-      range {
-          chrom
-          start
-          end
-      }
-      maxz
-      ctcf_zscore
-      ctspecific {
-          ct
-          dnase_zscore
-          promoter_zscore
-          enhancer_zscore
-          ctcf_zscore
-      }
-      enhancer_zscore
-      promoter_zscore
-      genesallpc {
-          pc
-          all
-      }
-      dnase_zscore
+    accession
+    ctcfmax
+    k27acmax
+    k4me3max
+    concordant
+    isproximal
+    range {
+        chrom
+        start
+        end
+    }
+    maxz
+    ctspecific {
+        ct
+        dnase_zscore
+        promoter_zscore
+        enhancer_zscore
+        ctcf_zscore
+    }
+    nearbygenes {
+        pc
+        all
     }
   }
 }
     
 query gb($gbrange: InputChromRange!) {
-  gb(assembly: hg19) {
-    trackhubs,
+  gb(version: { versiontag: "v11", assembly: hg19 }) {
     genetable(range: $gbrange)
   }
 }
@@ -306,10 +299,10 @@ mutation SetCart($uuid: UUID!) {
   }
 }
 
-query globals($assembly: Assembly!) {
-  globals {
+query globals {
+  globals(versiontag: "v11") {
     helpKeys,
-    byAssembly(assembly: $assembly){
+    byAssembly(assembly: hg19){
       tfs
     }
   }
@@ -320,8 +313,16 @@ query globals($assembly: Assembly!) {
 Query Variables (below Document):
 ```
 {
-  "assembly": "hg19",
+  "version": {
+    "versiontag": "v11",
+    "assembly": "hg19"
+  },
   "uuid": "59060ce0-6462-4498-990a-4e0e48844163",
+  "range": {
+    "chrom": "chr11",
+    "start": 5270000,
+    "end": 5290000
+  },
   "dataRange": {
     "range": {
       "chrom": "chr1",
@@ -332,6 +333,11 @@ Query Variables (below Document):
   "dataRangeChr": {
     "range": {
       "chrom": "chr1"
+    }
+  },
+  "dataquery": {
+    "range": {
+      "chrom": "chr11"
     }
   },
   "dataCellType": {

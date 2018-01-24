@@ -2,16 +2,17 @@ import TissueColors from './tissuecolors';
 import { natsorter } from './utils';
 
 export default class HelperGrouper {
-    transcript; rows: Array<object>; byID;
+    versiontag: string; transcript; rows: Array<object>; byID;
 
-     constructor(transcript, rows) {
+     constructor(versiontag: string,transcript, rows) {
+        this.versiontag = versiontag;
         this.transcript = transcript;
         this.rows = rows;
         this.byID = this.rows.reduce((obj, r) => ({ ...obj, [r['id']]: r }), {});
 
         for (const rid of Object.keys(this.byID)) {
             const r = this.byID[rid];
-            r['color'] = TissueColors.getTissueColor(r['tissue']);
+            r['color'] = TissueColors.getTissueColor(r['tissue'], this.versiontag);
             r['counts'] = +(r['counts']);
         }
     }
