@@ -48,6 +48,9 @@ class CreateIndices:
                                         "h3k4me3_max", "h3k27ac_max",
                                         "ctcf_max"])
                 conn.commit()
+                # TODO Because this increases the size of this table substantially, any import files that modify this table
+                # like 23_concordant will be *extremely* slow
+                # For now, it is probably better to comment out these two lines for initial import then rerun this file fully
                 for col in self.zscore_cols:
                     makeIndexArr(curs, tn, col, conn)
 

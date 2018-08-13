@@ -61,6 +61,8 @@ class MoreTracks:
         qd = QueryDCC(auth=False, cache=mc)
 
         m = MetadataWS.byAssembly(self.assembly)
+        # TODO this is broken currently https://github.com/weng-lab/metadata/issues/5
+        # It doesn't look like this table is currently used, so this can probably be skipped safely
         allExps = m.all_bigBeds_bigWigs(self.assembly)
         printt("found", len(allExps))
 
