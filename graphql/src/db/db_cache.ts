@@ -5,8 +5,8 @@ import * as Gwas from './db_gwas';
 import { GwasCellType } from '../schema/GwasResponse';
 import DataLoader from 'dataloader';
 import { TypeMap } from 'mime';
-import { Assembly, assaytype, ctspecificdata, GeBiosample } from '../types';
-import { getCtSpecificData } from './db_cre_table';
+import { Assembly, assaytype, ctspecificdata, GeBiosample, ConservationBin, ConservationValue } from '../types';
+import { getCtSpecificData, getConservationValues } from './db_cre_table';
 import { nearbyGene } from '../resolvers/credetails';
 import { reduceAsKeys } from '../utils';
 
@@ -29,6 +29,9 @@ const nearbyAllGenesLoader = (assembly: Assembly) =>
     new DataLoader<string, nearbyGene[]>(keys => Common.getGenesMany(assembly, keys, 'all'));
 export const nearbyPcGenesLoaders = reduceAsKeys(assemblies, nearbyPcGenesLoader);
 export const nearbyAllGenesLoaders = reduceAsKeys(assemblies, nearbyAllGenesLoader);
+const conservationLoader = (assembly: Assembly) =>
+    new DataLoader<string, ConservationValue[]>(keys => getConservationValues(assembly, keys));
+export const conservationLoaders = reduceAsKeys(assemblies, conservationLoader);
 
 async function indexFilesTab(assembly) {
     const datasets = await Common.datasets(assembly);
@@ -118,6 +121,7 @@ export type cache = {
     biosamples: Record<string, Biosample>;
     de_ctidmap: any;
     gwas_studies: Gwas.DBGwasStudy[];
+    conservationBins: ConservationBin[];
 };
 
 function getCacheMap(assembly): loadablecache {
@@ -164,6 +168,8 @@ function getCacheMap(assembly): loadablecache {
         de_ctidmap: assembly === 'mm10' ? () => De.getCtMap(assembly) : () => Promise.resolve(undefined),
 
         gwas_studies: assembly === 'hg19' ? () => Gwas.gwasStudies(assembly) : () => Promise.resolve([]),
+
+        conservationBins: () => Common.conservationBins(assembly),
     };
 }
 

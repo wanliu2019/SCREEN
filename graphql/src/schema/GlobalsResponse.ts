@@ -1,4 +1,4 @@
-import { GraphQLString, GraphQLList, GraphQLObjectType, GraphQLNonNull } from 'graphql';
+import { GraphQLString, GraphQLList, GraphQLObjectType, GraphQLNonNull, GraphQLInt, GraphQLFloat } from 'graphql';
 import * as CommonTypes from './CommonSchema';
 import {
     resolve_globals_assembly,
@@ -21,9 +21,41 @@ import {
     resolve_globals_inputData,
     resolve_globals_assembly_geExperiments,
     resolve_globals_assembly_gene,
+    resolve_globals_assembly_conservation_bins,
 } from '../resolvers/globals';
 import { GeneExpBiosample } from './GeneExpResponse';
 const GraphQLJSON = require('graphql-type-json');
+
+export const ConservationBinData = new GraphQLObjectType({
+    name: 'ConservationBinData',
+    fields: () => ({
+        binstart: {
+            type: new GraphQLNonNull(GraphQLFloat),
+        },
+        density: {
+            type: new GraphQLNonNull(GraphQLFloat),
+        },
+    }),
+});
+
+export const ConservationBins = new GraphQLObjectType({
+    name: 'ConservationBins',
+    description: 'Density values for each bin of conservation values, for each source',
+    fields: () => ({
+        source: {
+            type: new GraphQLNonNull(GraphQLString),
+        },
+        min: {
+            type: new GraphQLNonNull(GraphQLFloat),
+        },
+        max: {
+            type: new GraphQLNonNull(GraphQLFloat),
+        },
+        data: {
+            type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(ConservationBinData))),
+        },
+    }),
+});
 
 export const AssemblySpecificGlobalsResponse = new GraphQLObjectType({
     name: 'AssemblySpecificGlobals',
@@ -114,6 +146,11 @@ export const AssemblySpecificGlobalsResponse = new GraphQLObjectType({
                 },
             },
             resolve: resolve_globals_assembly_gene,
+        },
+        conservation_bins: {
+            description: 'Returns the density values for conservation scores of all ccREs',
+            type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(ConservationBins))),
+            resolve: resolve_globals_assembly_conservation_bins,
         },
     }),
 });

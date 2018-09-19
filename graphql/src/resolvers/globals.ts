@@ -57,6 +57,8 @@ export const resolve_globals_assembly_gene: GraphQLFieldResolver<{ assembly: Ass
     args
 ) => getGene(source.assembly, args.gene);
 
+export const resolve_globals_assembly_conservation_bins = source => loadCache(source.assembly).conservationBins();
+
 export const resolve_help_key: GraphQLFieldResolver<any, any> = async (source, args, context) => {
     const key = args.key;
     const helpKeys = await loadGlobalCache().helpKeys();

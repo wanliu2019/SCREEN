@@ -1,7 +1,7 @@
 import { getCreTable } from '../db/db_cre_table';
 import { GraphQLFieldResolver } from 'graphql';
 import { parse } from './search';
-import { loadCache, ccRECtspecificLoaders } from '../db/db_cache';
+import { loadCache, ccRECtspecificLoaders, conservationLoaders } from '../db/db_cache';
 import { UserError } from 'graphql-errors';
 import { Assembly } from '../types';
 import { CREDetails } from './credetails';
@@ -57,4 +57,10 @@ export function resolve_data_ctspecific(source, args) {
     const accession: string = source.accession;
     const ct: string = args.ct;
     return ccRECtspecificLoaders[assembly].load(`${accession}::${ct}`);
+}
+
+export function resolve_data_conservation(source) {
+    const assembly: Assembly = source.assembly;
+    const accession: string = source.accession;
+    return conservationLoaders[assembly].load(accession);
 }

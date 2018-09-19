@@ -13,7 +13,12 @@ import {
 } from 'graphql';
 import * as CommonTypes from './CommonSchema';
 import { CreDetailsResponse, NearbyGene } from './CreDetailsResponse';
-import { resolve_data_nearbygenes, resolve_data_range, resolve_data_ctspecific } from '../resolvers/cretable';
+import {
+    resolve_data_nearbygenes,
+    resolve_data_range,
+    resolve_data_ctspecific,
+    resolve_data_conservation,
+} from '../resolvers/cretable';
 import { resolve_details } from '../resolvers/credetails';
 import {
     resolve_snps_relatedstudies,
@@ -327,6 +332,19 @@ export const ctSpecific = new GraphQLObjectType({
     },
 });
 
+export const ConservationValue = new GraphQLObjectType({
+    name: 'ConservationValue',
+    description: 'The source and conservation score',
+    fields: () => ({
+        source: {
+            type: new GraphQLNonNull(GraphQLString),
+        },
+        value: {
+            type: new GraphQLNonNull(GraphQLFloat),
+        },
+    }),
+});
+
 export const cRE = new GraphQLObjectType({
     name: 'cRE',
     description: 'All data related to a ccRE.',
@@ -391,6 +409,11 @@ export const cRE = new GraphQLObjectType({
             description: 'Get details about this ccRE',
             type: new GraphQLNonNull(CreDetailsResponse),
             resolve: resolve_details,
+        },
+        conservation: {
+            description: 'Conservation values for this ccRE',
+            type: new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(ConservationValue))),
+            resolve: resolve_data_conservation,
         },
     }),
 });

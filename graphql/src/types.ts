@@ -25,3 +25,18 @@ export type ctspecificdata = {
 };
 
 export type GeBiosample = { biosample: string; tissue: string };
+
+export type ConservationBin = {
+    source: string;
+    index: number;
+    min: number;
+    max: number;
+    data: ({
+        binstart: number;
+        density: number;
+    })[];
+};
+export type ConservationValue = {
+    source: string;
+    value: number;
+};

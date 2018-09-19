@@ -2,7 +2,7 @@ import * as CoordUtils from '../coord_utils';
 import { db } from './db';
 import { getCreTable } from './db_cre_table';
 import { loadCache, Biosample } from './db_cache';
-import { Assembly, assaytype, GeBiosample } from '../types';
+import { Assembly, assaytype, GeBiosample, ConservationBin } from '../types';
 import { nearbyGene } from '../resolvers/credetails';
 import { UserError } from 'graphql-errors';
 
@@ -20,6 +20,7 @@ export async function creHist(assembly) {
     const tableName = assembly + '_cre_bins';
     const q = `SELECT chrom, buckets, numBins, binMax from ${tableName}`;
     const res = await db.many(q);
+    console.log(res);
     return res.reduce(
         (obj, e) => ({
             ...obj,
@@ -893,3 +894,34 @@ AND transcript_id = (
     );
     return res;
 }
+
+export const conservationBins = async (assembly: Assembly): Promise<ConservationBin[]> => {
+    const tableName = assembly + '_conservation_bins';
+    const q = `
+SELECT source, density, bin, index, min, max
+FROM ${tableName}
+    `;
+
+    const res = await db.any<{ source: string; density: number; bin: number; index: number; min: number; max: number }>(
+        q
+    );
+    const reduced = res.reduce(
+        (obj, curr) => {
+            // Source and index are co-unique
+            const data = (
+                obj[curr.source] ||
+                (obj[curr.source] = {
+                    source: curr.source,
+                    index: curr.index,
+                    min: curr.min,
+                    max: curr.max,
+                    data: [],
+                })
+            ).data;
+            data.push({ density: curr.density, binstart: curr.bin });
+            return obj;
+        },
+        {} as Record<string, ConservationBin>
+    );
+    return Object.values(reduced);
+};

@@ -2,7 +2,7 @@ import { Client } from 'pg';
 import { checkChrom, isaccession, isclose } from '../utils';
 import { db, pgp } from './db';
 import { loadablecache, loadCache } from './db_cache';
-import { ChromRange, Assembly, ctspecificdata } from '../types';
+import { ChromRange, Assembly, ctspecificdata, ConservationValue } from '../types';
 
 const { UserError } = require('graphql-errors');
 
@@ -358,3 +358,35 @@ export async function getCtSpecificData(assembly: Assembly, requested: string[])
         Array.from(Array(requested.length)) as ctspecificdata[]
     );
 }
+
+export const getConservationValues = async (
+    assembly: Assembly,
+    accessions: string[]
+): Promise<ConservationValue[][]> => {
+    const bins = await loadCache(assembly).conservationBins();
+    const map = bins.reduce(
+        (obj, curr) => {
+            obj[curr.index] = curr.source;
+            return obj;
+        },
+        {} as Record<number, string>
+    );
+
+    const table = assembly + '_cre_all';
+
+    const q = `
+SELECT accession, conservation_signals
+FROM ${table}
+WHERE accession = ANY($1)
+    `;
+
+    const res = await db.any<{ accession: string; conservation_signals: number[] }>(q, [accessions]);
+    const reduced = res.reduce(
+        (obj, curr) => {
+            obj[curr.accession] = curr.conservation_signals.map((v, i) => ({ source: map[i], value: v }));
+            return obj;
+        },
+        {} as Record<string, ConservationValue[]>
+    );
+    return accessions.map(accession => reduced[accession]);
+};
